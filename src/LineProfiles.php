@@ -32,11 +32,7 @@ class LineProfiles{
         $accessToken = $tokens[0];
         $idToken = $tokens[1];
 
-        // $headerData = [
-        //     "content-type: application/x-www-form-urlencoded",
-        //     "charset=UTF-8",
-        //     'Authorization: Bearer '.$accessToken,
-        // ];
+
         $post = [
             'id_token' => $idToken,
             'client_id' => $config[ $this->configManager::CLIENT_ID ],
@@ -52,7 +48,22 @@ class LineProfiles{
         $result = curl_exec($ch);
         curl_close($ch);
         $result = json_decode($result);
-        return $result;
+
+
+        $headerData = [
+            "content-type: application/x-www-form-urlencoded",
+            "charset=UTF-8",
+            'Authorization: Bearer '.$accessToken,
+        ];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headerData);
+        curl_setopt($ch, CURLOPT_URL, "https://api.line.me/v2/profile");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $result2 = curl_exec($ch);
+        curl_close($ch);
+        $result2 = json_decode($result2);
+
+        return array_merge((array)$result, (array)$result2);
     }
 
     /**
