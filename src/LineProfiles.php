@@ -26,16 +26,28 @@ class LineProfiles{
      * @throws LineAccessTokenNotFoundException
      */
     public function get($code){
-        $accessToken = self::getAccessToken($code);
-        $headerData = [
-            "content-type: application/x-www-form-urlencoded",
-            "charset=UTF-8",
-            'Authorization: Bearer '.$accessToken,
+        $tokens = self::getAccessToken($code);
+        $config = $this->configManager->getConfigs();
+
+        $accessToken = $tokens[0];
+        $idToken = $tokens[1];
+
+        // $headerData = [
+        //     "content-type: application/x-www-form-urlencoded",
+        //     "charset=UTF-8",
+        //     'Authorization: Bearer '.$accessToken,
+        // ];
+        $post = [
+            'id_token' => $idToken,
+            'client_id' => $config[ $this->configManager::CLIENT_ID ],
         ];
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_HTTPHEADER ,$headerData);
-        curl_setopt($ch , CURLOPT_URL , "https://api.line.me/v2/profile");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER , 1);
+        // curl_setopt($ch, CURLOPT_HTTPHEADER, $headerData);
+        // curl_setopt($ch, CURLOPT_URL, "https://api.line.me/v2/profile");
+        curl_setopt($ch, CURLOPT_URL, "https://api.line.me/oauth2/v2.1/verify");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query( $post ));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
         $result = curl_exec($ch);
         curl_close($ch);
@@ -61,11 +73,11 @@ class LineProfiles{
             'client_secret' => $config[ $this->configManager::CLIENT_SECRET ],
         ];
         $ch = curl_init();
-        curl_setopt($ch , CURLOPT_URL , "https://api.line.me/oauth2/v2.1/token");
+        curl_setopt($ch, CURLOPT_URL, "https://api.line.me/oauth2/v2.1/token");
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-type: application/x-www-form-urlencoded']);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query( $post ));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER , 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
         $info = curl_exec($ch);
         curl_close($ch);
@@ -74,6 +86,6 @@ class LineProfiles{
         if(empty($info->access_token)){
             throw new LineAccessTokenNotFoundException('Can Not Find User Access Token');
         }
-        return $info->access_token;
+        return [$info->access_token, $info->id_token];
     }
 }
